@@ -83,7 +83,7 @@ export function CreateClassOverlay({
         instructorName: '',
         instructorBio: '',
         skillLevel: 'beginner',
-        ageGroup: 'adult',
+        ageGroup: 'adults',
         maxStudents: '',
         duration: '60',
         price: '',
@@ -127,15 +127,15 @@ export function CreateClassOverlay({
     { value: 'beginner', label: 'Beginner' },
     { value: 'intermediate', label: 'Intermediate' },
     { value: 'advanced', label: 'Advanced' },
-    { value: 'all', label: 'All Levels' },
+    { value: 'all_levels', label: 'All Levels' },
   ]
 
   const ageGroups = [
     { value: 'kids', label: 'Kids (6-12)' },
     { value: 'teens', label: 'Teens (13-17)' },
-    { value: 'adult', label: 'Adult (18+)' },
-    { value: 'senior', label: 'Senior (55+)' },
-    { value: 'all', label: 'All Ages' },
+    { value: 'adults', label: 'Adult (18+)' },
+    { value: 'seniors', label: 'Senior (55+)' },
+    { value: 'all_ages', label: 'All Ages' },
   ]
 
   const frequencies = [
