@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  Users, 
+import {
+  Users,
   Clock,
   Calendar,
   MapPin,
@@ -24,6 +24,7 @@ import { getPartnerVenues } from '@/lib/supabase/venues'
 import { getPartnerCourts } from '@/lib/supabase/courts'
 import { createEvent, getPartnerClasses, ClassData, deleteEvent, toggleEventStatus, updateEvent } from '@/lib/supabase/events'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/lib/supabase'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,16 +101,52 @@ export default function ClassesPage() {
     }
   }
 
+  const uploadImageToStorage = async (partnerId: string, eventId: string, imageFile: File): Promise<string | null> => {
+    try {
+      // Create file path: {partner_id}/{event_id}/main.{extension}
+      const fileExt = imageFile.name.split('.').pop()
+      const filePath = `${partnerId}/${eventId}/main.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('events-images')
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        })
+
+      if (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('events-images')
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error)
+      toast({
+        title: "Warning",
+        description: "Failed to upload image. The class will be created without an image.",
+        variant: "destructive",
+      })
+      return null
+    }
+  }
+
   const handleClassSubmit = async (classData: any) => {
     console.log('Class data:', classData)
-    
+
     try {
       // Transform the overlay data to match the database schema
       const eventData: ClassData = {
         name: classData.title,
         description: classData.description,
         sport: classData.sport,
-        event_type: 'class',
+        event_type: classData.classType, // Use the actual class type from the form
         venue_id: classData.venueId,
         court_id: classData.courtId && classData.courtId !== '' ? classData.courtId : undefined,
         instructor_name: classData.instructorName,
@@ -143,6 +180,15 @@ export default function ClassesPage() {
       }
 
       if (result.success) {
+        // Upload image if provided
+        if (classData.selectedImage && classData.partnerId && result.event?.id) {
+          const imageUrl = await uploadImageToStorage(classData.partnerId, result.event.id, classData.selectedImage)
+          if (imageUrl) {
+            // Update event with image URL
+            await updateEvent(result.event.id, { image_url: imageUrl })
+          }
+        }
+
         toast({
           title: "Success!",
           description: classData.classId ? "Class updated successfully!" : "Class created successfully!",

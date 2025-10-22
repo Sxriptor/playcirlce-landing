@@ -305,15 +305,16 @@ export function CreateClassOverlay({
     setSubmitting(true)
 
     try {
-      // Get current user
+      // Get current user (for image upload)
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
         console.error('Error getting user:', userError)
         alert('You must be logged in to create classes')
+        setSubmitting(false)
         return
       }
 
-      // Get partner ID for this user
+      // Get partner ID for this user (for image upload)
       const { data: partner, error: partnerError } = await supabase
         .from('partners')
         .select('id')
@@ -323,144 +324,19 @@ export function CreateClassOverlay({
       if (partnerError || !partner) {
         console.error('Error fetching partner:', partnerError)
         alert('Partner account not found')
+        setSubmitting(false)
         return
       }
 
-      // Combine schedule date and time into timestamps
-      const startTimestamp = formData.schedule.startDate && formData.schedule.startTime
-        ? new Date(`${formData.schedule.startDate}T${formData.schedule.startTime}`).toISOString()
-        : null
-
-      const endTimestamp = formData.schedule.endDate && formData.schedule.endTime
-        ? new Date(`${formData.schedule.endDate}T${formData.schedule.endTime}`).toISOString()
-        : null
-
-      const registrationDeadlineTimestamp = formData.registrationDeadline
-        ? new Date(formData.registrationDeadline).toISOString()
-        : null
-
-      // Prepare class data for events table
-      const classData = {
-        // Required fields
-        partner_id: partner.id,
-        venue_id: formData.venueId,
-        sport: formData.sport,
-        event_type: formData.classType, // clinic, camp, workshop, class
-        name: formData.title,
-        title: formData.title,
-
-        // Class-specific fields
-        description: formData.description || null,
-        instructor_name: formData.instructorName,
-        instructor_bio: formData.instructorBio || null,
-
-        // Scheduling
-        start_date: formData.schedule.startDate,
-        end_date: formData.schedule.endDate || null,
-        start_time: formData.schedule.startTime,
-        end_time: formData.schedule.endTime,
-        start_timestamp: startTimestamp,
-        end_timestamp: endTimestamp,
-        is_recurring: formData.schedule.recurring,
-        recurrence_pattern: formData.schedule.recurring ? formData.schedule.frequency : null,
-
-        // Participation and pricing - capacity is required, default to 10 if not specified
-        capacity: parseInt(formData.maxStudents) || 10,
-        max_participants: parseInt(formData.maxStudents) || 10,
-        price: parseFloat(formData.price) || 0,
-
-        // Access type
-        access_type: formData.accessType,
-
-        // Registration
-        registration_deadline: registrationDeadlineTimestamp,
-        registration_closes: registrationDeadlineTimestamp,
-
-        // Requirements and details
-        skill_level: formData.skillLevel,
-        age_group: formData.ageGroup,
-        requirements: formData.requirements.length > 0 ? formData.requirements : null,
-
-        // Location
-        location: formData.location || null,
-        court_id: formData.courtId || null,
-
-        // Status
-        status: 'published', // Set to published so it's visible
-
-        // Equipment
-        equipment_provided: formData.equipment === 'provided',
+      // Prepare form data with image and partner info for parent component to handle
+      const dataToSubmit = {
+        ...formData,
+        selectedImage: selectedImage,
+        partnerId: partner.id,
       }
 
-      console.log(editingClass ? 'Updating class with data:' : 'Creating class with data:', classData)
-
-      let createdOrUpdatedClassId: string | null = null
-
-      if (editingClass) {
-        // Update existing class
-        const { data: updatedClass, error: updateError } = await supabase
-          .from('events')
-          .update(classData)
-          .eq('id', editingClass.id)
-          .select()
-          .single()
-
-        if (updateError) {
-          console.error('Error updating class:', updateError)
-          alert(`Failed to update class: ${updateError.message}`)
-          return
-        }
-
-        console.log('Class updated successfully:', updatedClass)
-        createdOrUpdatedClassId = updatedClass.id
-
-        // Upload image if selected
-        if (selectedImage) {
-          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedClassId)
-          if (imageUrl) {
-            // Update class with image URL
-            await supabase
-              .from('events')
-              .update({ image_url: imageUrl })
-              .eq('id', createdOrUpdatedClassId)
-          }
-        }
-
-        alert('Class updated successfully!')
-      } else {
-        // Insert new class into database
-        const { data: newClass, error: insertError } = await supabase
-          .from('events')
-          .insert([classData])
-          .select()
-          .single()
-
-        if (insertError) {
-          console.error('Error creating class:', insertError)
-          alert(`Failed to create class: ${insertError.message}`)
-          return
-        }
-
-        console.log('Class created successfully:', newClass)
-        createdOrUpdatedClassId = newClass.id
-
-        // Upload image if selected
-        if (selectedImage) {
-          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedClassId)
-          if (imageUrl) {
-            // Update class with image URL
-            await supabase
-              .from('events')
-              .update({ image_url: imageUrl })
-              .eq('id', createdOrUpdatedClassId)
-          }
-        }
-
-        alert('Class created successfully!')
-      }
-
-      // Call the onSubmit callback if provided (for parent component updates)
-      onSubmit(formData)
+      // Call the onSubmit callback (parent component will handle database operations)
+      await onSubmit(dataToSubmit)
 
       // Close and reset form
       onClose()
@@ -501,7 +377,7 @@ export function CreateClassOverlay({
       setImagePreview(null)
     } catch (error) {
       console.error('Error in handleSubmit:', error)
-      alert('An unexpected error occurred while creating the class')
+      alert('An unexpected error occurred while submitting the class')
     } finally {
       setSubmitting(false)
     }
