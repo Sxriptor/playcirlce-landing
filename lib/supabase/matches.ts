@@ -25,6 +25,7 @@ export interface MatchData {
   format: string
   rules?: string
   requirements: string[]
+  image_url?: string
 }
 
 export async function createMatch(matchData: MatchData): Promise<{ success: boolean; error?: string; match?: any }> {
@@ -78,7 +79,7 @@ export async function createMatch(matchData: MatchData): Promise<{ success: bool
       : null
 
     // Prepare match data for database
-    const matchPayload = {
+    const matchPayload: any = {
       partner_id: partner.id,
       venue_id: matchData.venueId,
       court_id: matchData.courtId,
@@ -99,6 +100,11 @@ export async function createMatch(matchData: MatchData): Promise<{ success: bool
       status: 'scheduled',
       rules: rulesJson,
       requirements: requirementsJson
+    }
+    
+    // Add image URL if provided
+    if (matchData.image_url) {
+      matchPayload.image_url = matchData.image_url
     }
 
     console.log('Match payload for database:', matchPayload)
@@ -221,6 +227,11 @@ export async function updateMatch(matchId: string, matchData: Partial<MatchData>
       updatePayload.requirements = matchData.requirements && matchData.requirements.length > 0 
         ? matchData.requirements 
         : null
+    }
+    
+    // Handle image URL if provided
+    if (matchData.image_url !== undefined) {
+      updatePayload.image_url = matchData.image_url
     }
     
     updatePayload.updated_at = new Date().toISOString()

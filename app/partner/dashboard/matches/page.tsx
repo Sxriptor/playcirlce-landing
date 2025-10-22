@@ -19,9 +19,10 @@ import {
 import { CreateMatchOverlay } from '@/components/partner/overlays'
 import { useTheme } from '@/components/partner/layout/ThemeProvider'
 import { getThemeColors, themeColors } from '@/lib/theme-colors'
-import { getPartnerVenues } from '@/lib/supabase/venues'
+import { getPartnerVenues, getCurrentPartner } from '@/lib/supabase/venues'
 import { getPartnerCourts } from '@/lib/supabase/courts'
 import { createMatch, getPartnerMatches, MatchData, deleteMatch, toggleMatchStatus, updateMatch } from '@/lib/supabase/matches'
+import { supabase } from '@/lib/supabase'
 import { useToast } from '@/hooks/use-toast'
 import {
   DropdownMenu,
@@ -94,13 +95,53 @@ export default function MatchesPage() {
     }
   }
 
-  const handleMatchSubmit = async (matchData: MatchData & { matchId?: string }) => {
+  const uploadImageToStorage = async (partnerId: string, matchId: string, imageFile: File): Promise<string | null> => {
+    try {
+      // Create file path: {partner_id}/{match_id}/main.{extension}
+      const fileExt = imageFile.name.split('.').pop()
+      const filePath = `${partnerId}/${matchId}/main.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('matches-images')
+        .upload(filePath, imageFile, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        })
+
+      if (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('matches-images')
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error)
+      toast({
+        title: "Warning",
+        description: "Failed to upload match image. Match created without image.",
+        variant: "destructive",
+      })
+      return null
+    }
+  }
+
+  const handleMatchSubmit = async (matchData: MatchData & { matchId?: string; imageFile?: File | null }) => {
     console.log('Match data:', matchData)
     
     try {
+      // Store imageFile and remove it from the data sent to createMatch/updateMatch
+      const imageFile = matchData.imageFile
+      
       // Format rules and requirements as JSON before submitting
       const formattedData = {
         ...matchData,
+        imageFile: undefined, // Remove imageFile from database submission
         // Don't send rules/requirements to createMatch/updateMatch as they expect the old format
       }
 
@@ -115,6 +156,19 @@ export default function MatchesPage() {
       }
 
       if (result.success) {
+        // Upload image if provided
+        if (imageFile && result.match?.id) {
+          const partner = await getCurrentPartner()
+          if (partner) {
+            const imageUrl = await uploadImageToStorage(partner.id, result.match.id, imageFile)
+            
+            // Update match with image URL if upload was successful
+            if (imageUrl) {
+              await updateMatch(result.match.id, { image_url: imageUrl })
+            }
+          }
+        }
+
         toast({
           title: "Success!",
           description: matchData.matchId ? "Match updated successfully!" : "Match created successfully!",

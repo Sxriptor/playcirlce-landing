@@ -88,6 +88,7 @@ export function CreateEventOverlay({
 
   const sportOptions = [
     { value: 'tennis', label: 'Tennis' },
+    { value: 'padel', label: 'Padel' },
     { value: 'pickleball', label: 'Pickleball' },
     { value: 'badminton', label: 'Badminton' },
     { value: 'squash', label: 'Squash' },

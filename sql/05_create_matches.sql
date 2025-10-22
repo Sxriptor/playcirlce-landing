@@ -10,7 +10,7 @@ create table if not exists matches (
   -- Match details
   title text not null,
   description text,
-  sport text not null check (sport in ('tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
+  sport text not null check (sport in ('tennis', 'padel', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
   
   -- Scheduling
   scheduled_date date not null,

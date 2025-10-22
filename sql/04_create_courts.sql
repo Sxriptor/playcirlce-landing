@@ -7,7 +7,7 @@ create table if not exists courts (
   name text not null, -- "Court 1", "Center Court", etc.
   
   -- Court specifications
-  sport_type text not null check (sport_type in ('tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis')),
+  sport_type text not null check (sport_type in ('tennis', 'padel', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis')),
   surface_type text check (surface_type in ('hard', 'clay', 'grass', 'indoor_hard', 'synthetic', 'wood')),
   indoor boolean default false,
   

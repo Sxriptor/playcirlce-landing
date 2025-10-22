@@ -13,7 +13,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { supabase } from '@/lib/supabase'
 import React from 'react'
 
 interface CreateMatchOverlayProps {
@@ -56,10 +55,10 @@ export function CreateMatchOverlay({
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [uploadingImage, setUploadingImage] = useState(false)
 
   const sportOptions = [
     { value: 'tennis', label: 'Tennis' },
+    { value: 'padel', label: 'Padel' },
     { value: 'pickleball', label: 'Pickleball' },
     { value: 'badminton', label: 'Badminton' },
     { value: 'squash', label: 'Squash' },
@@ -71,6 +70,11 @@ export function CreateMatchOverlay({
   const getMatchTypesForSport = (sport: string) => {
     switch (sport) {
       case 'tennis':
+        return [
+          { value: 'singles', label: 'Singles (1v1)' },
+          { value: 'doubles', label: 'Doubles (2v2)' },
+        ]
+      case 'padel':
         return [
           { value: 'singles', label: 'Singles (1v1)' },
           { value: 'doubles', label: 'Doubles (2v2)' },
@@ -107,6 +111,10 @@ export function CreateMatchOverlay({
   const getMatchConfig = (sport: string, matchType: string) => {
     const configs: { [key: string]: { [key: string]: { maxPlayers: string; format: string } } } = {
       tennis: {
+        singles: { maxPlayers: '2', format: 'singles' },
+        doubles: { maxPlayers: '4', format: 'doubles' },
+      },
+      padel: {
         singles: { maxPlayers: '2', format: 'singles' },
         doubles: { maxPlayers: '4', format: 'doubles' },
       },
@@ -241,44 +249,6 @@ export function CreateMatchOverlay({
     setImagePreview(null)
   }
 
-  const uploadImageToStorage = async (partnerId: string, matchId: string): Promise<string | null> => {
-    if (!selectedImage) return null
-
-    try {
-      setUploadingImage(true)
-
-      // Create file path: {partner_id}/{match_id}/main.{extension}
-      const fileExt = selectedImage.name.split('.').pop()
-      const filePath = `${partnerId}/${matchId}/main.${fileExt}`
-
-      // Upload to Supabase storage
-      const { data, error } = await supabase.storage
-        .from('matches-images')
-        .upload(filePath, selectedImage, {
-          cacheControl: '3600',
-          upsert: true // Replace if exists
-        })
-
-      if (error) {
-        console.error('Error uploading image:', error)
-        throw error
-      }
-
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('matches-images')
-        .getPublicUrl(filePath)
-
-      return publicUrlData.publicUrl
-    } catch (error) {
-      console.error('Error in uploadImageToStorage:', error)
-      alert('Failed to upload image. The match will be created without an image.')
-      return null
-    } finally {
-      setUploadingImage(false)
-    }
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -291,10 +261,10 @@ export function CreateMatchOverlay({
         : 'open' // Default to 'open' if invalid
     }
     
-    // Include match ID if editing
+    // Include match ID if editing and selected image file
     const submitData = editingMatch 
-      ? { ...sanitizedFormData, matchId: editingMatch.id }
-      : sanitizedFormData
+      ? { ...sanitizedFormData, matchId: editingMatch.id, imageFile: selectedImage }
+      : { ...sanitizedFormData, imageFile: selectedImage }
     
     onSubmit(submitData)
   }
@@ -828,14 +798,13 @@ export function CreateMatchOverlay({
             </Button>
             <Button
               type="submit"
-              disabled={uploadingImage}
-              className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white"
               style={{
                 background: '#456882',
                 boxShadow: '0 4px 12px rgba(69, 104, 130, 0.3)'
               }}
             >
-              {uploadingImage ? 'Uploading Image...' : (editingMatch ? 'Update Match' : 'Create Match')}
+              {editingMatch ? 'Update Match' : 'Create Match'}
             </Button>
           </div>
         </form>

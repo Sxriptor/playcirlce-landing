@@ -6,7 +6,7 @@
 -- Defines official formats for each sport (singles, doubles, team sizes, etc.)
 CREATE TABLE IF NOT EXISTS public.sport_formats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    sport TEXT NOT NULL CHECK (sport IN ('tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
+    sport TEXT NOT NULL CHECK (sport IN ('tennis', 'padel', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
     format_name TEXT NOT NULL, -- e.g., 'Singles', 'Doubles', '2v2', '3v3', '5v5', 'Indoor 6v6', 'Beach 2v2'
     format_type TEXT NOT NULL, -- e.g., 'singles', 'doubles', 'team'
     participant_count INTEGER NOT NULL, -- Total number of participants (2 for singles, 4 for doubles, etc.)
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS public.events (
   court_id UUID REFERENCES courts(id) ON DELETE SET NULL, -- Optional specific court
 
   -- Sport MUST be selected first (drives format options)
-  sport TEXT NOT NULL CHECK (sport IN ('tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
+  sport TEXT NOT NULL CHECK (sport IN ('tennis', 'padel', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball')),
   sport_id TEXT REFERENCES public.sports(id) ON DELETE CASCADE,
 
   -- Sport format (dynamically populated based on sport selection)
@@ -486,6 +486,13 @@ INSERT INTO sport_formats (sport, format_name, format_type, participant_count, t
 VALUES
   ('tennis', 'Singles', 'singles', 2, 1, true, 1, 'One player per side'),
   ('tennis', 'Doubles', 'doubles', 4, 2, true, 2, 'Two players per side')
+ON CONFLICT (sport, format_name) DO NOTHING;
+
+-- Padel formats (same as tennis: singles and doubles)
+INSERT INTO sport_formats (sport, format_name, format_type, participant_count, team_size, is_preferred, display_order, description)
+VALUES
+  ('padel', 'Singles', 'singles', 2, 1, true, 1, 'One player per side'),
+  ('padel', 'Doubles', 'doubles', 4, 2, true, 2, 'Two players per side (most common format)')
 ON CONFLICT (sport, format_name) DO NOTHING;
 
 -- Pickleball formats
