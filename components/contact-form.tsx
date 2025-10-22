@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +16,7 @@ import {
 type SupportHelpType = 'partnership' | 'general_inquiry' | 'feedback' | 'other'
 
 export function ContactForm() {
+  const formRef = useRef<HTMLFormElement>(null)
   const [phoneNumber, setPhoneNumber] = useState("")
   const [helpType, setHelpType] = useState<SupportHelpType | "">("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -75,7 +76,7 @@ export function ContactForm() {
           message: result.message || 'Thank you! We\'ll get back to you soon.'
         })
         // Reset form
-        e.currentTarget.reset()
+        formRef.current?.reset()
         setPhoneNumber('')
         setHelpType('')
       } else {
@@ -119,7 +120,7 @@ export function ContactForm() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
           {/* Name Row */}
           <div className="grid sm:grid-cols-2 gap-5">
             <div className="space-y-2">
