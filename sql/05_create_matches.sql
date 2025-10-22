@@ -67,6 +67,27 @@ create table if not exists matches (
   )
 );
 
+-- Update the sport check constraint if the table already exists (to add padel support)
+DO $$
+BEGIN
+    -- Drop the old constraint if it exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'matches_sport_check' 
+        AND table_name = 'matches'
+    ) THEN
+        ALTER TABLE matches DROP CONSTRAINT matches_sport_check;
+    END IF;
+    
+    -- Add the updated constraint with padel
+    ALTER TABLE matches ADD CONSTRAINT matches_sport_check 
+        CHECK (sport IN ('padel', 'tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball'));
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Constraint might already be correct, ignore error
+        NULL;
+END $$;
+
 -- Match participants junction table
 create table if not exists match_participants (
   id uuid primary key default gen_random_uuid(),

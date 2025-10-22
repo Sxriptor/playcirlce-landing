@@ -20,6 +20,27 @@ CREATE TABLE IF NOT EXISTS public.sport_formats (
     UNIQUE(sport, format_name)
 );
 
+-- Update the sport check constraint if the table already exists (to add padel support)
+DO $$
+BEGIN
+    -- Drop the old constraint if it exists
+    IF EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'sport_formats_sport_check' 
+        AND table_name = 'sport_formats'
+    ) THEN
+        ALTER TABLE sport_formats DROP CONSTRAINT sport_formats_sport_check;
+    END IF;
+    
+    -- Add the updated constraint with padel
+    ALTER TABLE sport_formats ADD CONSTRAINT sport_formats_sport_check 
+        CHECK (sport IN ('padel', 'tennis', 'pickleball', 'squash', 'racquetball', 'badminton', 'table_tennis', 'basketball', 'volleyball'));
+EXCEPTION
+    WHEN OTHERS THEN
+        -- Constraint might already be correct, ignore error
+        NULL;
+END $$;
+
 -- Event types lookup table for mobile app
 CREATE TABLE IF NOT EXISTS public.event_types (
     id TEXT PRIMARY KEY,
