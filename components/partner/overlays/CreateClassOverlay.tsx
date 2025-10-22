@@ -364,9 +364,9 @@ export function CreateClassOverlay({
         is_recurring: formData.schedule.recurring,
         recurrence_pattern: formData.schedule.recurring ? formData.schedule.frequency : null,
 
-        // Participation and pricing
-        capacity: parseInt(formData.maxStudents) || null,
-        max_participants: parseInt(formData.maxStudents) || null,
+        // Participation and pricing - capacity is required, default to 10 if not specified
+        capacity: parseInt(formData.maxStudents) || 10,
+        max_participants: parseInt(formData.maxStudents) || 10,
         price: parseFloat(formData.price) || 0,
 
         // Access type
@@ -964,16 +964,20 @@ export function CreateClassOverlay({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Max Students
+                  Max Students *
                 </label>
                 <Input
                   type="number"
                   value={formData.maxStudents}
                   onChange={(e) => handleInputChange('maxStudents', e.target.value)}
-                  placeholder="8"
+                  placeholder="10"
                   min="1"
+                  required
                   className="bg-white/5 border-white/10 text-white placeholder-gray-500"
                 />
+                <p className="text-xs text-gray-400 mt-1">
+                  Default: 10 students if not specified
+                </p>
               </div>
               
               <div>
