@@ -17,6 +17,7 @@ export interface MatchData {
   scheduledDate: string
   startTime: string
   endTime: string
+  timezone?: string
   maxPlayers: string
   entryFee?: string
   prizePool?: string
@@ -89,6 +90,7 @@ export async function createMatch(matchData: MatchData): Promise<{ success: bool
       scheduled_date: matchData.scheduledDate,
       start_time: matchData.startTime,
       end_time: matchData.endTime,
+      timezone: matchData.timezone || 'UTC',
       match_type: matchData.matchType,
       skill_level: matchData.skillLevel,
       access_type: matchData.accessType,

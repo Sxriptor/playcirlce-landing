@@ -43,6 +43,7 @@ export function CreateMatchOverlay({
     scheduledDate: '',
     startTime: '',
     endTime: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     maxPlayers: '',
     entryFee: '',
     prizePool: '',
@@ -64,6 +65,26 @@ export function CreateMatchOverlay({
     { value: 'squash', label: 'Squash' },
     { value: 'basketball', label: 'Basketball' },
     { value: 'volleyball', label: 'Volleyball' },
+  ]
+
+  const timezoneOptions = [
+    { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+    { value: 'America/New_York', label: 'Eastern Time (ET)' },
+    { value: 'America/Chicago', label: 'Central Time (CT)' },
+    { value: 'America/Denver', label: 'Mountain Time (MT)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+    { value: 'America/Anchorage', label: 'Alaska Time (AKT)' },
+    { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)' },
+    { value: 'Europe/London', label: 'London (GMT/BST)' },
+    { value: 'Europe/Paris', label: 'Central European Time (CET)' },
+    { value: 'Europe/Madrid', label: 'Madrid (CET)' },
+    { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEDT)' },
+    { value: 'America/Mexico_City', label: 'Mexico City (CST)' },
+    { value: 'America/Sao_Paulo', label: 'São Paulo (BRT)' },
+    { value: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires (ART)' },
   ]
 
   // Get available match types based on selected sport
@@ -308,6 +329,7 @@ export function CreateMatchOverlay({
           scheduledDate: editingMatch.scheduled_date || '',
           startTime: editingMatch.start_time || '',
           endTime: editingMatch.end_time || '',
+          timezone: editingMatch.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
           maxPlayers: editingMatch.max_players?.toString() || '',
           entryFee: editingMatch.entry_fee?.toString() || '',
           prizePool: editingMatch.prize_pool?.toString() || '',
@@ -334,6 +356,7 @@ export function CreateMatchOverlay({
           scheduledDate: '',
           startTime: '',
           endTime: '',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
           maxPlayers: '',
           entryFee: '',
           prizePool: '',
@@ -633,6 +656,27 @@ export function CreateMatchOverlay({
                   className="bg-white/5 border-white/10 text-white"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Time Zone *
+              </label>
+              <select
+                value={formData.timezone}
+                onChange={(e) => handleInputChange('timezone', e.target.value)}
+                required
+                className="w-full h-9 px-3 py-1 rounded-md bg-white/5 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {timezoneOptions.map((tz) => (
+                  <option key={tz.value} value={tz.value} className="bg-gray-800">
+                    {tz.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400 mt-1">
+                Select the time zone for this match. All times will be displayed in this time zone.
+              </p>
             </div>
 
             {formData.accessType === 'reserve' && (

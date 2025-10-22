@@ -17,6 +17,7 @@ export interface EventData {
   end_date?: string | null
   start_time: string
   end_time: string
+  timezone?: string
   capacity: number
   max_participants?: number
   price: number
