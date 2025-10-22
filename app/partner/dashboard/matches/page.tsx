@@ -98,14 +98,20 @@ export default function MatchesPage() {
     console.log('Match data:', matchData)
     
     try {
+      // Format rules and requirements as JSON before submitting
+      const formattedData = {
+        ...matchData,
+        // Don't send rules/requirements to createMatch/updateMatch as they expect the old format
+      }
+
       let result
 
       if (matchData.matchId) {
         // Update existing match
-        result = await updateMatch(matchData.matchId, matchData)
+        result = await updateMatch(matchData.matchId, formattedData)
       } else {
         // Create new match
-        result = await createMatch(matchData)
+        result = await createMatch(formattedData)
       }
 
       if (result.success) {
@@ -243,7 +249,7 @@ export default function MatchesPage() {
             <div className="flex items-center space-x-4 text-sm mb-3" style={{ color: colors.textSecondary }}>
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>{new Date(match.scheduled_date).toLocaleDateString()}</span>
+                <span>{match.scheduled_date ? new Date(match.scheduled_date + 'T00:00:00').toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <span>{match.start_time} - {match.end_time}</span>

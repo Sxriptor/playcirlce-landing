@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Users, Trophy, DollarSign, X, Target } from 'lucide-react'
+import { Calendar, Clock, Users, Trophy, DollarSign, X, Target, Upload, Image as ImageIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { supabase } from '@/lib/supabase'
 import React from 'react'
 
 interface CreateMatchOverlayProps {
@@ -52,6 +53,10 @@ export function CreateMatchOverlay({
     rules: '',
     requirements: [] as string[],
   })
+
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const sportOptions = [
     { value: 'tennis', label: 'Tennis' },
@@ -204,6 +209,76 @@ export function CreateMatchOverlay({
     }))
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP, or GIF)')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5242880) {
+      alert('Image size must be less than 5MB')
+      return
+    }
+
+    setSelectedImage(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+  }
+
+  const uploadImageToStorage = async (partnerId: string, matchId: string): Promise<string | null> => {
+    if (!selectedImage) return null
+
+    try {
+      setUploadingImage(true)
+
+      // Create file path: {partner_id}/{match_id}/main.{extension}
+      const fileExt = selectedImage.name.split('.').pop()
+      const filePath = `${partnerId}/${matchId}/main.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('matches-images')
+        .upload(filePath, selectedImage, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        })
+
+      if (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('matches-images')
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error)
+      alert('Failed to upload image. The match will be created without an image.')
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -222,28 +297,6 @@ export function CreateMatchOverlay({
       : sanitizedFormData
     
     onSubmit(submitData)
-    onClose()
-    // Reset form
-    setFormData({
-      title: '',
-      description: '',
-      matchType: 'singles',
-      sport: 'tennis',
-      accessType: 'reserve',
-      venueId: '',
-      courtId: '',
-      scheduledDate: '',
-      startTime: '',
-      endTime: '',
-      maxPlayers: '',
-      entryFee: '',
-      prizePool: '',
-      registrationDeadline: '',
-      skillLevel: 'intermediate',
-      format: 'elimination',
-      rules: '',
-      requirements: [],
-    })
   }
 
   // Reset form when overlay opens, then populate if editing
@@ -256,24 +309,23 @@ export function CreateMatchOverlay({
           ? editingMatch.skill_level 
           : 'open'
         
-        // Convert boolean requirement fields back to array
-        const requirementMap: { [key: string]: string } = {
-          'valid_id_required': 'Valid ID Required',
-          'equipment_provided': 'Equipment Provided',
-          'skill_level_verification': 'Skill Level Verification',
-          'no_late_entries': 'No Late Entries',
-          'waiver_must_be_signed': 'Waiver Must Be Signed',
-          'bring_own_equipment': 'Bring Own Equipment',
-          'registration_fee_non_refundable': 'Registration Fee Non-Refundable',
-          'punctuality_required': 'Punctuality Required'
-        }
-        
-        const selectedRequirements: string[] = []
-        Object.entries(requirementMap).forEach(([field, label]) => {
-          if (editingMatch[field]) {
-            selectedRequirements.push(label)
+        // Parse rules from JSON
+        let rulesText = ''
+        if (editingMatch.rules) {
+          if (typeof editingMatch.rules === 'string') {
+            rulesText = editingMatch.rules
+          } else if (editingMatch.rules.text) {
+            rulesText = editingMatch.rules.text
           }
-        })
+        }
+
+        // Parse requirements from JSON
+        let requirementsArray: string[] = []
+        if (editingMatch.requirements) {
+          if (Array.isArray(editingMatch.requirements)) {
+            requirementsArray = editingMatch.requirements
+          }
+        }
 
         setFormData({
           title: editingMatch.title || '',
@@ -292,9 +344,13 @@ export function CreateMatchOverlay({
           registrationDeadline: editingMatch.registration_deadline ? editingMatch.registration_deadline.split('T')[0] : '',
           skillLevel: sanitizedSkillLevel,
           format: editingMatch.format || 'singles',
-          rules: editingMatch.rules || '',
-          requirements: selectedRequirements,
+          rules: rulesText,
+          requirements: requirementsArray,
         })
+        
+        // Reset image state when editing
+        setSelectedImage(null)
+        setImagePreview(null)
       } else {
         // Reset form for new match creation
         setFormData({
@@ -317,6 +373,10 @@ export function CreateMatchOverlay({
           rules: '',
           requirements: [],
         })
+        
+        // Reset image state
+        setSelectedImage(null)
+        setImagePreview(null)
       }
     }
   }, [isOpen, editingMatch])
@@ -466,6 +526,48 @@ export function CreateMatchOverlay({
                 rows={3}
                 className="bg-white/5 border-white/10 text-white placeholder-gray-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Match Image (Optional)
+              </label>
+              <div className="space-y-3">
+                {!imagePreview ? (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="match-image-upload"
+                    />
+                    <label
+                      htmlFor="match-image-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 transition-colors bg-white/5"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-400">Click to upload match image</p>
+                      <p className="text-xs text-gray-500 mt-1">JPEG, PNG, WebP, or GIF (max 5MB)</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Match preview"
+                      className="w-full h-48 object-cover rounded-lg border border-white/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -726,13 +828,14 @@ export function CreateMatchOverlay({
             </Button>
             <Button
               type="submit"
-              className="text-white"
+              disabled={uploadingImage}
+              className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: '#456882',
                 boxShadow: '0 4px 12px rgba(69, 104, 130, 0.3)'
               }}
             >
-              {editingMatch ? 'Update Match' : 'Create Match'}
+              {uploadingImage ? 'Uploading Image...' : (editingMatch ? 'Update Match' : 'Create Match')}
             </Button>
           </div>
         </form>

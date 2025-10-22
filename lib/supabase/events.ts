@@ -18,6 +18,7 @@ export interface EventData {
   start_time: string
   end_time: string
   capacity: number
+  max_participants?: number
   price: number
   skill_level?: string
   age_group?: string

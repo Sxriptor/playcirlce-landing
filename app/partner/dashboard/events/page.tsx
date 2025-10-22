@@ -252,7 +252,7 @@ export default function EventsPage() {
             <div className="flex items-center space-x-4 text-sm mb-3" style={{ color: colors.textSecondary }}>
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>{new Date(event.start_date).toLocaleDateString()}</span>
+                <span>{event.start_date ? new Date(event.start_date + 'T00:00:00').toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />

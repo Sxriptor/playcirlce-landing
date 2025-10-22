@@ -345,7 +345,7 @@ export default function PartnerDashboard() {
                     data={{
                       title: match.title,
                       sport: match.sport,
-                      date: new Date(match.scheduled_date).toLocaleDateString(),
+                      date: match.scheduled_date ? new Date(match.scheduled_date + 'T00:00:00').toLocaleDateString() : 'N/A',
                       players: `${match.current_players}/${match.max_players}`,
                       status: match.status
                     }}

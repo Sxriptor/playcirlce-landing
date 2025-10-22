@@ -142,6 +142,7 @@ export default function ClassesPage() {
 
     try {
       // Transform the overlay data to match the database schema
+      const maxCapacity = parseInt(classData.maxStudents) || 10
       const eventData: ClassData = {
         name: classData.title,
         description: classData.description,
@@ -155,7 +156,8 @@ export default function ClassesPage() {
         end_date: classData.schedule.endDate || null,
         start_time: classData.schedule.startTime,
         end_time: classData.schedule.endTime,
-        capacity: parseInt(classData.maxStudents) || 10,
+        capacity: maxCapacity,
+        max_participants: maxCapacity,
         price: parseFloat(classData.price) || 0,
         skill_level: classData.skillLevel,
         age_group: classData.ageGroup,
@@ -362,7 +364,7 @@ export default function ClassesPage() {
             <div className="flex items-center space-x-4 text-sm mb-3" style={{ color: colors.textSecondary }}>
               <div className="flex items-center space-x-1">
                 <Calendar className="h-4 w-4" />
-                <span>{new Date(classItem.start_date).toLocaleDateString()}</span>
+                <span>{classItem.start_date ? new Date(classItem.start_date + 'T00:00:00').toLocaleDateString() : 'N/A'}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
