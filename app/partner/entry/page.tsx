@@ -17,6 +17,8 @@ export default function PartnerEntryPage() {
   const [error, setError] = useState('')
   const [showEmailVerification, setShowEmailVerification] = useState(false)
   const [signupEmail, setSignupEmail] = useState('')
+  const [showDuplicateEmailOverlay, setShowDuplicateEmailOverlay] = useState(false)
+  const [duplicateEmail, setDuplicateEmail] = useState('')
 
   // Application overlay states
   const [showApplicationOverlay, setShowApplicationOverlay] = useState(false)
@@ -190,6 +192,16 @@ export default function PartnerEntryPage() {
       })
 
       if (authError) {
+        // Check if the error is due to a duplicate email/user already registered
+        if (authError.message.toLowerCase().includes('already') ||
+            authError.message.toLowerCase().includes('exists') ||
+            authError.message.toLowerCase().includes('registered')) {
+          setDuplicateEmail(email)
+          setShowDuplicateEmailOverlay(true)
+          setLoading(false)
+          return
+        }
+
         setError(authError.message)
         setLoading(false)
         return
@@ -228,8 +240,28 @@ export default function PartnerEntryPage() {
             full_name: fullName,
             partner: false
           })
-        
-        if (insertError && insertError.code !== '23505') { // Ignore duplicate key error
+
+        if (insertError) {
+          // Check if it's a duplicate key error (user already exists)
+          if (insertError.code === '23505') {
+            // Duplicate key - user already exists
+            setDuplicateEmail(email)
+            setShowDuplicateEmailOverlay(true)
+            setLoading(false)
+            return
+          }
+
+          // Check for foreign key violations or other duplicate-related errors
+          if (insertError.message.toLowerCase().includes('duplicate') ||
+              insertError.message.toLowerCase().includes('already exists') ||
+              insertError.message.toLowerCase().includes('foreign key') ||
+              insertError.code === '23503') {
+            setDuplicateEmail(email)
+            setShowDuplicateEmailOverlay(true)
+            setLoading(false)
+            return
+          }
+
           setError('Failed to create profile: ' + insertError.message)
           setLoading(false)
           return
@@ -255,6 +287,19 @@ export default function PartnerEntryPage() {
       setShowEmailVerification(true)
 
     } catch (err: any) {
+      // Check if the error indicates a duplicate account
+      const errorMessage = err.message || ''
+      if (errorMessage.toLowerCase().includes('duplicate') ||
+          errorMessage.toLowerCase().includes('already exists') ||
+          errorMessage.toLowerCase().includes('already registered') ||
+          errorMessage.toLowerCase().includes('foreign key') ||
+          errorMessage.toLowerCase().includes('user already')) {
+        setDuplicateEmail(email)
+        setShowDuplicateEmailOverlay(true)
+        setLoading(false)
+        return
+      }
+
       setError(err.message || 'An error occurred during sign up')
       setLoading(false)
     }
@@ -444,6 +489,75 @@ export default function PartnerEntryPage() {
 
   return (
     <>
+      {/* Duplicate Email Overlay */}
+      {showDuplicateEmailOverlay && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div
+            className="bg-slate-800 rounded-lg p-8 max-w-md w-full text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Warning Icon */}
+            <div className="flex justify-center mb-6">
+              <div className="w-20 h-20 bg-amber-600/20 rounded-full flex items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-10 h-10 text-amber-400"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Account Already Exists
+            </h2>
+
+            <p className="text-slate-300 text-lg mb-2">
+              An account with this email already exists:
+            </p>
+
+            <p className="text-amber-400 font-medium text-lg mb-6">
+              {duplicateEmail}
+            </p>
+
+            <p className="text-slate-400 text-sm mb-8">
+              Please sign in with your existing account or use a different email address to create a new account.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDuplicateEmailOverlay(false)
+                  switchToSignIn(duplicateEmail)
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => {
+                  setShowDuplicateEmailOverlay(false)
+                  setEmail('')
+                }}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-lg transition-colors"
+              >
+                Try Different Email
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Email Verification Overlay */}
       {showEmailVerification && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -476,17 +590,17 @@ export default function PartnerEntryPage() {
             <h2 className="text-3xl font-bold text-white mb-4">
               Verify Your Email
             </h2>
-            
+
             <p className="text-slate-300 text-lg mb-2">
               We've sent a verification email to:
             </p>
-            
+
             <p className="text-blue-400 font-medium text-lg mb-6">
               {signupEmail}
             </p>
-            
+
             <p className="text-slate-400 text-sm mb-8">
-              Please check your inbox and click the verification link to activate your account. 
+              Please check your inbox and click the verification link to activate your account.
               Once verified, you can sign in and submit your partner application.
             </p>
 
