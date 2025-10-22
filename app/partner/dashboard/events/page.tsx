@@ -77,6 +77,7 @@ export default function EventsPage() {
       }
 
       // Fetch events for this partner with venue info
+      // Only show events with event_type = tournament, league, match, social
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select(`
@@ -87,6 +88,7 @@ export default function EventsPage() {
           )
         `)
         .eq('partner_id', partner.id)
+        .in('event_type', ['tournament', 'league', 'match', 'social'])
         .order('start_date', { ascending: true })
 
       if (eventsError) {

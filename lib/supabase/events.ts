@@ -157,7 +157,74 @@ export async function getPartnerEvents(eventType?: string) {
 }
 
 export async function getPartnerClasses() {
-  return getPartnerEvents('class')
+  const supabase = createClient()
+  
+  try {
+    // Get the current user's partner ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      throw new Error('User not authenticated')
+    }
+
+    // Get partner ID from user
+    const { data: partner, error: partnerError } = await supabase
+      .from('partners')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (partnerError || !partner) {
+      throw new Error('Partner not found')
+    }
+
+    // Filter for class-related event types: clinic, camp, workshop, class
+    const { data: events, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('partner_id', partner.id)
+      .in('event_type', ['clinic', 'camp', 'workshop', 'class'])
+      .order('start_date', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching classes:', error)
+      throw error
+    }
+
+    // Get venue names separately to avoid complex joins
+    const venueIds = [...new Set(events.map(event => event.venue_id))]
+    const { data: venues } = await supabase
+      .from('venues')
+      .select('id, name')
+      .in('id', venueIds)
+
+    // Get court names separately if needed
+    const courtIds = events.map(event => event.court_id).filter(Boolean)
+    let courts: any[] = []
+    if (courtIds.length > 0) {
+      const { data: courtsData } = await supabase
+        .from('courts')
+        .select('id, name')
+        .in('id', courtIds)
+      courts = courtsData || []
+    }
+
+    // Transform the data to match the expected format
+    const transformedEvents = events.map((event: any) => {
+      const venue = venues?.find(v => v.id === event.venue_id)
+      const court = courts.find(c => c.id === event.court_id)
+      
+      return {
+        ...event,
+        venue_name: venue?.name || 'Unknown Venue',
+        court_name: court?.name || null
+      }
+    })
+
+    return transformedEvents
+  } catch (error) {
+    console.error('Error in getPartnerClasses:', error)
+    throw error
+  }
 }
 
 export async function updateEvent(eventId: string, eventData: Partial<EventData>) {

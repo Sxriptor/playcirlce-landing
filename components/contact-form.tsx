@@ -13,13 +13,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
+type SupportHelpType = 'partnership' | 'general_inquiry' | 'feedback' | 'other'
+
 export function ContactForm() {
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [helpType, setHelpType] = useState<SupportHelpType | "">("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState<{
+    type: 'success' | 'error' | null
+    message: string
+  }>({ type: null, message: '' })
 
   const formatPhoneNumber = (value: string) => {
     // Remove all non-numeric characters
     const numbers = value.replace(/\D/g, "")
-    
+
     // Format as 305-555-1234
     if (numbers.length <= 3) {
       return numbers
@@ -35,10 +43,56 @@ export function ContactForm() {
     setPhoneNumber(formatted)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    // Handle form submission
-    console.log("Form submitted")
+    setIsSubmitting(true)
+    setSubmitStatus({ type: null, message: '' })
+
+    const formData = new FormData(e.currentTarget)
+    const data = {
+      firstName: formData.get('firstName') as string,
+      lastName: formData.get('lastName') as string,
+      email: formData.get('email') as string,
+      phone: phoneNumber,
+      helpType: helpType as SupportHelpType,
+      message: formData.get('message') as string,
+    }
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (response.ok) {
+        setSubmitStatus({
+          type: 'success',
+          message: result.message || 'Thank you! We\'ll get back to you soon.'
+        })
+        // Reset form
+        e.currentTarget.reset()
+        setPhoneNumber('')
+        setHelpType('')
+      } else {
+        setSubmitStatus({
+          type: 'error',
+          message: result.error || 'Something went wrong. Please try again.'
+        })
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      setSubmitStatus({
+        type: 'error',
+        message: 'Failed to send message. Please try again later.'
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -52,6 +106,19 @@ export function ContactForm() {
           boxShadow: '0 0 40px rgba(69, 104, 130, 0.15)'
         }}
       >
+        {/* Status Messages */}
+        {submitStatus.type && (
+          <div
+            className={`mb-5 p-4 rounded-lg ${
+              submitStatus.type === 'success'
+                ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+                : 'bg-red-500/10 border border-red-500/30 text-red-400'
+            }`}
+          >
+            {submitStatus.message}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Name Row */}
           <div className="grid sm:grid-cols-2 gap-5">
@@ -61,6 +128,7 @@ export function ContactForm() {
               </Label>
               <Input
                 id="firstName"
+                name="firstName"
                 type="text"
                 required
                 placeholder="John"
@@ -74,6 +142,7 @@ export function ContactForm() {
               </Label>
               <Input
                 id="lastName"
+                name="lastName"
                 type="text"
                 required
                 placeholder="Doe"
@@ -90,6 +159,7 @@ export function ContactForm() {
               </Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 required
                 placeholder="john@example.com"
@@ -119,7 +189,7 @@ export function ContactForm() {
             <Label htmlFor="helpType" className="text-gray-300 text-sm font-medium">
               How can we help? <span style={{ color: '#456882' }}>*</span>
             </Label>
-            <Select required>
+            <Select required value={helpType} onValueChange={(value) => setHelpType(value as SupportHelpType)}>
               <SelectTrigger
                 id="helpType"
                 className="bg-[#0a0f14]/80 border-[#456882]/30 text-white rounded-lg h-12 text-base focus:border-[#456882] focus:ring-1 focus:ring-[#456882] transition-all"
@@ -127,9 +197,8 @@ export function ContactForm() {
                 <SelectValue placeholder="Select a topic" />
               </SelectTrigger>
               <SelectContent className="bg-[#0d1219] border-[#456882]/30 text-white">
-                <SelectItem value="support">Support</SelectItem>
                 <SelectItem value="partnership">Partnership</SelectItem>
-                <SelectItem value="general">General Inquiry</SelectItem>
+                <SelectItem value="general_inquiry">General Inquiry</SelectItem>
                 <SelectItem value="feedback">Feedback</SelectItem>
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
@@ -143,6 +212,7 @@ export function ContactForm() {
             </Label>
             <Textarea
               id="message"
+              name="message"
               required
               rows={5}
               placeholder="Tell us more about your inquiry..."
@@ -153,13 +223,14 @@ export function ContactForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-12 font-semibold rounded-lg text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-lg"
+            disabled={isSubmitting}
+            className="w-full h-12 font-semibold rounded-lg text-base transition-all duration-300 hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             style={{
               background: '#456882',
               color: 'white'
             }}
           >
-            Send Message
+            {isSubmitting ? 'Sending...' : 'Send Message'}
           </Button>
         </form>
       </div>
