@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Calendar, Clock, DollarSign, GraduationCap, X } from 'lucide-react'
+import { Users, Calendar, Clock, DollarSign, GraduationCap, X, Upload, Image as ImageIcon } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,11 @@ export function CreateClassOverlay({
     objectives: '',
     curriculum: '',
   })
+
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   // Update form data when editing class changes
   React.useEffect(() => {
@@ -200,6 +206,76 @@ export function CreateClassOverlay({
     }))
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP, or GIF)')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5242880) {
+      alert('Image size must be less than 5MB')
+      return
+    }
+
+    setSelectedImage(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+  }
+
+  const uploadImageToStorage = async (partnerId: string, eventId: string): Promise<string | null> => {
+    if (!selectedImage) return null
+
+    try {
+      setUploadingImage(true)
+
+      // Create file path: {partner_id}/{event_id}/main.{extension}
+      const fileExt = selectedImage.name.split('.').pop()
+      const filePath = `${partnerId}/${eventId}/main.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('events-images')
+        .upload(filePath, selectedImage, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        })
+
+      if (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('events-images')
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error)
+      alert('Failed to upload image. The class will be created without an image.')
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   // Auto-populate location when venue is selected
   const handleVenueChange = (venueId: string) => {
     const selectedVenue = venues.find(venue => venue.id === venueId)
@@ -224,44 +300,211 @@ export function CreateClassOverlay({
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
-    onClose()
-    // Reset form
-    setFormData({
-      title: '',
-      description: '',
-      classType: 'clinic',
-      sport: 'tennis',
-      accessType: 'reserve',
-      venueId: '',
-      courtId: '',
-      location: '',
-      instructorName: '',
-      instructorBio: '',
-      skillLevel: 'beginner',
-      ageGroup: 'adult',
-      maxStudents: '',
-      duration: '60',
-      price: '',
-      packagePrice: '',
-      packageSessions: '4',
-      registrationDeadline: '',
-      schedule: {
-        recurring: true,
-        frequency: 'weekly',
-        dayOfWeek: 'monday',
-        startTime: '',
-        endTime: '',
-        startDate: '',
-        endDate: '',
-      },
-      equipment: 'provided',
-      requirements: [],
-      objectives: '',
-      curriculum: '',
-    })
+    setSubmitting(true)
+
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        console.error('Error getting user:', userError)
+        alert('You must be logged in to create classes')
+        return
+      }
+
+      // Get partner ID for this user
+      const { data: partner, error: partnerError } = await supabase
+        .from('partners')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (partnerError || !partner) {
+        console.error('Error fetching partner:', partnerError)
+        alert('Partner account not found')
+        return
+      }
+
+      // Combine schedule date and time into timestamps
+      const startTimestamp = formData.schedule.startDate && formData.schedule.startTime
+        ? new Date(`${formData.schedule.startDate}T${formData.schedule.startTime}`).toISOString()
+        : null
+
+      const endTimestamp = formData.schedule.endDate && formData.schedule.endTime
+        ? new Date(`${formData.schedule.endDate}T${formData.schedule.endTime}`).toISOString()
+        : null
+
+      const registrationDeadlineTimestamp = formData.registrationDeadline
+        ? new Date(formData.registrationDeadline).toISOString()
+        : null
+
+      // Prepare class data for events table
+      const classData = {
+        // Required fields
+        partner_id: partner.id,
+        venue_id: formData.venueId,
+        sport: formData.sport,
+        event_type: formData.classType, // clinic, camp, workshop, class
+        name: formData.title,
+        title: formData.title,
+
+        // Class-specific fields
+        description: formData.description || null,
+        instructor_name: formData.instructorName,
+        instructor_bio: formData.instructorBio || null,
+
+        // Scheduling
+        start_date: formData.schedule.startDate,
+        end_date: formData.schedule.endDate || null,
+        start_time: formData.schedule.startTime,
+        end_time: formData.schedule.endTime,
+        start_timestamp: startTimestamp,
+        end_timestamp: endTimestamp,
+        is_recurring: formData.schedule.recurring,
+        recurrence_pattern: formData.schedule.recurring ? formData.schedule.frequency : null,
+
+        // Participation and pricing
+        capacity: parseInt(formData.maxStudents) || null,
+        max_participants: parseInt(formData.maxStudents) || null,
+        price: parseFloat(formData.price) || 0,
+
+        // Access type
+        access_type: formData.accessType,
+
+        // Registration
+        registration_deadline: registrationDeadlineTimestamp,
+        registration_closes: registrationDeadlineTimestamp,
+
+        // Requirements and details
+        skill_level: formData.skillLevel,
+        age_group: formData.ageGroup,
+        requirements: formData.requirements.length > 0 ? formData.requirements : null,
+
+        // Location
+        location: formData.location || null,
+        court_id: formData.courtId || null,
+
+        // Status
+        status: 'published', // Set to published so it's visible
+
+        // Equipment
+        equipment_provided: formData.equipment === 'provided',
+      }
+
+      console.log(editingClass ? 'Updating class with data:' : 'Creating class with data:', classData)
+
+      let createdOrUpdatedClassId: string | null = null
+
+      if (editingClass) {
+        // Update existing class
+        const { data: updatedClass, error: updateError } = await supabase
+          .from('events')
+          .update(classData)
+          .eq('id', editingClass.id)
+          .select()
+          .single()
+
+        if (updateError) {
+          console.error('Error updating class:', updateError)
+          alert(`Failed to update class: ${updateError.message}`)
+          return
+        }
+
+        console.log('Class updated successfully:', updatedClass)
+        createdOrUpdatedClassId = updatedClass.id
+
+        // Upload image if selected
+        if (selectedImage) {
+          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedClassId)
+          if (imageUrl) {
+            // Update class with image URL
+            await supabase
+              .from('events')
+              .update({ image_url: imageUrl })
+              .eq('id', createdOrUpdatedClassId)
+          }
+        }
+
+        alert('Class updated successfully!')
+      } else {
+        // Insert new class into database
+        const { data: newClass, error: insertError } = await supabase
+          .from('events')
+          .insert([classData])
+          .select()
+          .single()
+
+        if (insertError) {
+          console.error('Error creating class:', insertError)
+          alert(`Failed to create class: ${insertError.message}`)
+          return
+        }
+
+        console.log('Class created successfully:', newClass)
+        createdOrUpdatedClassId = newClass.id
+
+        // Upload image if selected
+        if (selectedImage) {
+          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedClassId)
+          if (imageUrl) {
+            // Update class with image URL
+            await supabase
+              .from('events')
+              .update({ image_url: imageUrl })
+              .eq('id', createdOrUpdatedClassId)
+          }
+        }
+
+        alert('Class created successfully!')
+      }
+
+      // Call the onSubmit callback if provided (for parent component updates)
+      onSubmit(formData)
+
+      // Close and reset form
+      onClose()
+      setFormData({
+        title: '',
+        description: '',
+        classType: 'clinic',
+        sport: 'tennis',
+        accessType: 'reserve',
+        venueId: '',
+        courtId: '',
+        location: '',
+        instructorName: '',
+        instructorBio: '',
+        skillLevel: 'beginner',
+        ageGroup: 'adult',
+        maxStudents: '',
+        duration: '60',
+        price: '',
+        packagePrice: '',
+        packageSessions: '4',
+        registrationDeadline: '',
+        schedule: {
+          recurring: true,
+          frequency: 'weekly',
+          dayOfWeek: 'monday',
+          startTime: '',
+          endTime: '',
+          startDate: '',
+          endDate: '',
+        },
+        equipment: 'provided',
+        requirements: [],
+        objectives: '',
+        curriculum: '',
+      })
+      setSelectedImage(null)
+      setImagePreview(null)
+    } catch (error) {
+      console.error('Error in handleSubmit:', error)
+      alert('An unexpected error occurred while creating the class')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const availableCourts = courts.filter(court => 
@@ -444,6 +687,48 @@ export function CreateClassOverlay({
                 rows={3}
                 className="bg-white/5 border-white/10 text-white placeholder-gray-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Class Image (Optional)
+              </label>
+              <div className="space-y-3">
+                {!imagePreview ? (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="class-image-upload"
+                    />
+                    <label
+                      htmlFor="class-image-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 transition-colors bg-white/5"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-400">Click to upload class image</p>
+                      <p className="text-xs text-gray-500 mt-1">JPEG, PNG, WebP, or GIF (max 5MB)</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Class preview"
+                      className="w-full h-48 object-cover rounded-lg border border-white/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -847,13 +1132,14 @@ export function CreateClassOverlay({
             </Button>
             <Button
               type="submit"
-              className="text-white"
+              disabled={submitting || uploadingImage}
+              className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: '#456882',
                 boxShadow: '0 4px 12px rgba(69, 104, 130, 0.3)'
               }}
             >
-              {editingClass ? 'Update Class' : 'Create Class'}
+              {uploadingImage ? 'Uploading Image...' : submitting ? (editingClass ? 'Updating Class...' : 'Creating Class...') : (editingClass ? 'Update Class' : 'Create Class')}
             </Button>
           </div>
         </form>

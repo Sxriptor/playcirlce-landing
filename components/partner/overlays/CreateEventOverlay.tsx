@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Calendar, Clock, Users, Trophy, DollarSign, X } from 'lucide-react'
+import { Calendar, Clock, Users, Trophy, DollarSign, X, Upload, Image as ImageIcon } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -58,6 +58,10 @@ export function CreateEventOverlay({
     equipmentRequired: '',
     location: '',
   })
+
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   const [sportFormats, setSportFormats] = useState<Array<{
     id: string
@@ -431,6 +435,76 @@ export function CreateEventOverlay({
     }))
   }
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+    if (!validTypes.includes(file.type)) {
+      alert('Please select a valid image file (JPEG, PNG, WebP, or GIF)')
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5242880) {
+      alert('Image size must be less than 5MB')
+      return
+    }
+
+    setSelectedImage(file)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null)
+    setImagePreview(null)
+  }
+
+  const uploadImageToStorage = async (partnerId: string, eventId: string): Promise<string | null> => {
+    if (!selectedImage) return null
+
+    try {
+      setUploadingImage(true)
+
+      // Create file path: {partner_id}/{event_id}/main.{extension}
+      const fileExt = selectedImage.name.split('.').pop()
+      const filePath = `${partnerId}/${eventId}/main.${fileExt}`
+
+      // Upload to Supabase storage
+      const { data, error } = await supabase.storage
+        .from('events-images')
+        .upload(filePath, selectedImage, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        })
+
+      if (error) {
+        console.error('Error uploading image:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('events-images')
+        .getPublicUrl(filePath)
+
+      return publicUrlData.publicUrl
+    } catch (error) {
+      console.error('Error in uploadImageToStorage:', error)
+      alert('Failed to upload image. The event will be created without an image.')
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
@@ -524,6 +598,8 @@ export function CreateEventOverlay({
 
       console.log(editingEvent ? 'Updating event with data:' : 'Creating event with data:', eventData)
 
+      let createdOrUpdatedEventId: string | null = null
+
       if (editingEvent) {
         // Update existing event
         const { data: updatedEvent, error: updateError } = await supabase
@@ -540,6 +616,20 @@ export function CreateEventOverlay({
         }
 
         console.log('Event updated successfully:', updatedEvent)
+        createdOrUpdatedEventId = updatedEvent.id
+
+        // Upload image if selected
+        if (selectedImage) {
+          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedEventId)
+          if (imageUrl) {
+            // Update event with image URL
+            await supabase
+              .from('events')
+              .update({ image_url: imageUrl })
+              .eq('id', createdOrUpdatedEventId)
+          }
+        }
+
         alert('Event updated successfully!')
       } else {
         // Insert new event into database
@@ -556,6 +646,20 @@ export function CreateEventOverlay({
         }
 
         console.log('Event created successfully:', newEvent)
+        createdOrUpdatedEventId = newEvent.id
+
+        // Upload image if selected
+        if (selectedImage) {
+          const imageUrl = await uploadImageToStorage(partner.id, createdOrUpdatedEventId)
+          if (imageUrl) {
+            // Update event with image URL
+            await supabase
+              .from('events')
+              .update({ image_url: imageUrl })
+              .eq('id', createdOrUpdatedEventId)
+          }
+        }
+
         alert('Event created successfully!')
       }
 
@@ -710,6 +814,48 @@ export function CreateEventOverlay({
                 rows={3}
                 className="bg-white/5 border-white/10 text-white placeholder-gray-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Event Image (Optional)
+              </label>
+              <div className="space-y-3">
+                {!imagePreview ? (
+                  <div className="relative">
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                      onChange={handleImageSelect}
+                      className="hidden"
+                      id="event-image-upload"
+                    />
+                    <label
+                      htmlFor="event-image-upload"
+                      className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-white/20 rounded-lg cursor-pointer hover:border-white/40 transition-colors bg-white/5"
+                    >
+                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-400">Click to upload event image</p>
+                      <p className="text-xs text-gray-500 mt-1">JPEG, PNG, WebP, or GIF (max 5MB)</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Event preview"
+                      className="w-full h-48 object-cover rounded-lg border border-white/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 p-2 bg-red-500/80 hover:bg-red-500 text-white rounded-lg transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1066,14 +1212,14 @@ export function CreateEventOverlay({
             </Button>
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploadingImage}
               className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
               style={{
                 background: '#456882',
                 boxShadow: '0 4px 12px rgba(69, 104, 130, 0.3)'
               }}
             >
-              {submitting ? (editingEvent ? 'Updating Event...' : 'Creating Event...') : (editingEvent ? 'Update Event' : 'Create Event')}
+              {uploadingImage ? 'Uploading Image...' : submitting ? (editingEvent ? 'Updating Event...' : 'Creating Event...') : (editingEvent ? 'Update Event' : 'Create Event')}
             </Button>
           </div>
         </form>
