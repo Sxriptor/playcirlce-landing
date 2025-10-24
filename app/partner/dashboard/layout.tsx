@@ -7,6 +7,7 @@ import { validatePartnerAccess } from '@/lib/auth-utils'
 import { Navbar } from '@/components/partner/layout/Navbar'
 import { Sidebar } from '@/components/partner/layout/Sidebar'
 import { ThemeProvider, useTheme } from '@/components/partner/layout/ThemeProvider'
+import { SubscriptionPaywall } from '@/components/partner/overlays/SubscriptionPaywall'
 import { getThemeColors } from '@/lib/theme-colors'
 import type { Partner } from '@/lib/types'
 import { Loader2 } from 'lucide-react'
@@ -14,6 +15,7 @@ import { Loader2 } from 'lucide-react'
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [partner, setPartner] = useState<Partner | null>(null)
   const [loading, setLoading] = useState(true)
+  const [needsSubscription, setNeedsSubscription] = useState(false)
   const router = useRouter()
   const { theme } = useTheme()
   const colors = getThemeColors(theme)
@@ -73,6 +75,18 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         }
 
         setPartner(partnerData)
+
+        // Check subscription status
+        const { data: subscription } = await supabase
+          .from('partner_subscriptions')
+          .select('status')
+          .eq('partner_id', partnerData.id)
+          .single()
+
+        // Show paywall if no active subscription
+        if (!subscription || subscription.status !== 'active') {
+          setNeedsSubscription(true)
+        }
       } catch (error) {
         console.error('Auth check failed:', error)
         // In demo mode, don't redirect on error
@@ -108,14 +122,43 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     )
   }
 
+  // Show subscription paywall if needed
+  if (needsSubscription && partner) {
+    return (
+      <>
+        <div className="h-screen flex flex-col overflow-hidden" style={{
+          background: colors.background
+        }}>
+          <Navbar partner={partner} />
+          <div className="flex flex-1 overflow-hidden">
+            <Sidebar />
+            <main className="flex-1 overflow-y-auto p-8" style={{
+              background: colors.background
+            }}>
+              {children}
+            </main>
+          </div>
+        </div>
+        <SubscriptionPaywall
+          partnerId={partner.id}
+          onSubscribed={() => {
+            setNeedsSubscription(false)
+            // Reload to refresh subscription status
+            window.location.reload()
+          }}
+        />
+      </>
+    )
+  }
+
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ 
+    <div className="h-screen flex flex-col overflow-hidden" style={{
       background: colors.background
     }}>
       <Navbar partner={partner} />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-y-auto p-8" style={{ 
+        <main className="flex-1 overflow-y-auto p-8" style={{
           background: colors.background
         }}>
           {children}

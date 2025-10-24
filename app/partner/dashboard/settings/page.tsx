@@ -1118,11 +1118,29 @@ export default function SettingsPage() {
                 </div>
 
                 <motion.button
-                  onClick={() => {
-                    // TODO: Replace with actual Stripe Customer Portal URL
-                    // const stripePortalUrl = await createStripePortalSession()
-                    // window.open(stripePortalUrl, '_blank')
-                    window.open('https://billing.stripe.com/p/login/test_placeholder', '_blank')
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/partner/api/billing/create-portal-session', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          partnerId: partnerId,
+                        }),
+                      })
+
+                      const data = await response.json()
+
+                      if (response.ok && data.url) {
+                        window.location.href = data.url
+                      } else {
+                        setMessage({ type: 'error', text: data.error || 'Failed to open billing portal' })
+                      }
+                    } catch (error) {
+                      console.error('Error opening billing portal:', error)
+                      setMessage({ type: 'error', text: 'Failed to open billing portal' })
+                    }
                   }}
                   className="px-8 py-4 rounded-2xl bg-[#456882] hover:bg-[#3a5670] text-white font-bold text-base transition-all flex items-center gap-3"
                   whileHover={{ scale: 1.05 }}
