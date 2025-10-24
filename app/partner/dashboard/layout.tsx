@@ -16,6 +16,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [partner, setPartner] = useState<Partner | null>(null)
   const [loading, setLoading] = useState(true)
   const [needsSubscription, setNeedsSubscription] = useState(false)
+  const [subscriptionVerified, setSubscriptionVerified] = useState(false)
   const router = useRouter()
   const { theme } = useTheme()
   const colors = getThemeColors(theme)
@@ -125,29 +126,14 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   // Show subscription paywall if needed
   if (needsSubscription && partner) {
     return (
-      <>
-        <div className="h-screen flex flex-col overflow-hidden" style={{
-          background: colors.background
-        }}>
-          <Navbar partner={partner} />
-          <div className="flex flex-1 overflow-hidden">
-            <Sidebar />
-            <main className="flex-1 overflow-y-auto p-8" style={{
-              background: colors.background
-            }}>
-              {children}
-            </main>
-          </div>
-        </div>
-        <SubscriptionPaywall
-          partnerId={partner.id}
-          onSubscribed={() => {
-            setNeedsSubscription(false)
-            // Reload to refresh subscription status
-            window.location.reload()
-          }}
-        />
-      </>
+      <SubscriptionPaywall
+        partnerId={partner.id}
+        onSubscribed={() => {
+          setNeedsSubscription(false)
+          // Reload to refresh subscription status
+          window.location.reload()
+        }}
+      />
     )
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, Check, Loader2 } from 'lucide-react'
 import { useTheme } from '@/components/partner/layout/ThemeProvider'
@@ -16,6 +16,41 @@ export function SubscriptionPaywall({ partnerId, onSubscribed }: SubscriptionPay
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly')
   const { theme } = useTheme()
   const colors = getThemeColors(theme)
+
+  // Prevent closing paywall by making body non-scrollable and blocking interactions
+  useEffect(() => {
+    // Disable scrolling on body
+    document.body.style.overflow = 'hidden'
+
+    // Prevent right-click context menu
+    const preventContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+      return false
+    }
+
+    // Prevent certain keyboard shortcuts
+    const preventShortcuts = (e: KeyboardEvent) => {
+      // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
+        (e.ctrlKey && e.key === 'U')
+      ) {
+        e.preventDefault()
+        return false
+      }
+    }
+
+    document.addEventListener('contextmenu', preventContextMenu)
+    document.addEventListener('keydown', preventShortcuts)
+
+    // Cleanup
+    return () => {
+      document.body.style.overflow = 'unset'
+      document.removeEventListener('contextmenu', preventContextMenu)
+      document.removeEventListener('keydown', preventShortcuts)
+    }
+  }, [])
 
   const handleSubscribe = async () => {
     setLoading(true)
