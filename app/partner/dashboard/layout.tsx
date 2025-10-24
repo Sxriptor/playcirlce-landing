@@ -77,6 +77,34 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
         setPartner(partnerData)
 
+        // Check if just completed checkout
+        const urlParams = new URLSearchParams(window.location.search)
+        const subscriptionParam = urlParams.get('subscription')
+
+        if (subscriptionParam === 'success') {
+          // Manually sync subscription from Stripe (in case webhook hasn't fired yet)
+          try {
+            const syncResponse = await fetch('/partner/api/billing/sync-subscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                partnerId: partnerData.id,
+              }),
+            })
+
+            if (syncResponse.ok) {
+              console.log('Subscription synced successfully')
+            }
+          } catch (error) {
+            console.error('Error syncing subscription:', error)
+          }
+
+          // Clear the URL parameter
+          window.history.replaceState({}, '', '/partner/dashboard')
+        }
+
         // Check subscription status
         const { data: subscription } = await supabase
           .from('partner_subscriptions')
