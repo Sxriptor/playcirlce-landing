@@ -417,17 +417,245 @@ export default function PartnersPage() {
             </div>
           </section>
 
+          {/* Pricing Section */}
+          <section className="py-16 sm:py-24 lg:py-32 px-4 relative overflow-hidden" style={{ background: '#050a0f' }}>
+            <motion.div
+              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full opacity-5 blur-3xl"
+              style={{ background: '#456882' }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{
+                opacity: 0.05,
+                scale: 1,
+                x: [0, -40, 0, 40, 0],
+                y: [0, 30, 0, -30, 0]
+              }}
+              transition={{
+                opacity: { duration: 1.5, delay: 2.2 },
+                scale: { duration: 1.5, delay: 2.2 },
+                x: { duration: 16, repeat: Infinity, ease: "easeInOut", delay: 3.7 },
+                y: { duration: 16, repeat: Infinity, ease: "easeInOut", delay: 3.7 }
+              }}
+            />
+
+            <div className="max-w-6xl mx-auto relative z-10">
+              <motion.div
+                className="text-center mb-12 sm:mb-16 lg:mb-20"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8 }}
+              >
+                <motion.h2
+                  className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  Simple, Transparent Pricing
+                </motion.h2>
+                <motion.div
+                  className="w-12 sm:w-16 h-px mx-auto mb-6"
+                  style={{ backgroundColor: '#456882' }}
+                  initial={{ width: 0 }}
+                  whileInView={{ width: 'auto' }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                />
+                <motion.p
+                  className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                >
+                  Get approved first, pay only when you're ready to go live
+                </motion.p>
+              </motion.div>
+
+              <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto mb-12">
+                {/* Monthly Plan */}
+                <motion.div
+                  className="rounded-3xl p-8 sm:p-10 backdrop-blur-md"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(69, 104, 130, 0.12) 0%, rgba(13, 18, 22, 0.8) 100%)',
+                    border: '1px solid rgba(69, 104, 130, 0.25)',
+                    boxShadow: '0 0 30px rgba(69, 104, 130, 0.08)'
+                  }}
+                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  whileHover={{
+                    scale: 1.02,
+                    y: -5,
+                    boxShadow: '0 0 50px rgba(69, 104, 130, 0.15)'
+                  }}
+                >
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">Monthly</h3>
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-4xl sm:text-5xl font-bold text-white">$99</span>
+                      <span className="text-lg text-gray-400">/month</span>
+                    </div>
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Flexible month-to-month billing</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Cancel anytime</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Full platform access</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Venue & court management</span>
+                    </li>
+                  </ul>
+                </motion.div>
+
+                {/* Yearly Plan */}
+                <motion.div
+                  className="rounded-3xl p-8 sm:p-10 backdrop-blur-md relative"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(69, 104, 130, 0.18) 0%, rgba(13, 18, 22, 0.85) 100%)',
+                    border: '2px solid rgba(69, 104, 130, 0.4)',
+                    boxShadow: '0 0 40px rgba(69, 104, 130, 0.12)'
+                  }}
+                  initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  whileHover={{
+                    scale: 1.02,
+                    y: -5,
+                    boxShadow: '0 0 60px rgba(69, 104, 130, 0.2)'
+                  }}
+                >
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <span className="px-4 py-1 rounded-full text-sm font-semibold text-white" style={{ backgroundColor: '#456882' }}>
+                      Save 25%
+                    </span>
+                  </div>
+                  <div className="text-center mb-6">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-white mb-2">Yearly</h3>
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-4xl sm:text-5xl font-bold text-white">$899</span>
+                      <span className="text-lg text-gray-400">/year</span>
+                    </div>
+                    <p className="text-sm text-gray-400 mt-2">$74.00/month billed annually</p>
+                  </div>
+                  <ul className="space-y-4 mb-8">
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Save $300 per year</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Everything in Monthly</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Priority support</span>
+                    </li>
+                    <li className="flex items-start gap-3 text-gray-300">
+                      <svg className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: '#456882' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Advanced analytics</span>
+                    </li>
+                  </ul>
+                </motion.div>
+              </div>
+
+              {/* CTA Box */}
+              <motion.div
+                className="max-w-3xl mx-auto rounded-3xl p-8 sm:p-10 backdrop-blur-md text-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(69, 104, 130, 0.15) 0%, rgba(13, 18, 22, 0.8) 100%)',
+                  border: '1px solid rgba(69, 104, 130, 0.3)',
+                  boxShadow: '0 0 40px rgba(69, 104, 130, 0.1)'
+                }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+              >
+                <motion.div
+                  className="w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center"
+                  style={{ background: 'rgba(69, 104, 130, 0.2)', color: '#456882' }}
+                  initial={{ scale: 0, rotate: -180 }}
+                  whileInView={{ scale: 1, rotate: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
+                  whileHover={{ rotate: 360 }}
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </motion.div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                  Apply First, Pay After Approval
+                </h3>
+                <p className="text-base sm:text-lg text-gray-300 mb-6 leading-relaxed">
+                  Your payment only starts once your partnership application is approved and you're ready to launch.
+                  Apply now with no upfront costs or commitments.
+                </p>
+                <motion.a
+                  href="#apply"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.querySelector('#apply')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="inline-flex items-center px-8 py-4 rounded-full text-lg font-semibold text-white"
+                  style={{ backgroundColor: '#456882' }}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -2,
+                    boxShadow: '0 10px 30px rgba(69, 104, 130, 0.3)'
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Apply for Partnership
+                  <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </motion.a>
+              </motion.div>
+            </div>
+          </section>
+
           {/* Existing Partners Section */}
           <section className="py-16 sm:py-24 lg:py-32 px-4 relative overflow-hidden" style={{ background: '#050a0f' }}>
             <div className="max-w-4xl mx-auto relative z-10">
-              <motion.div 
+              <motion.div
                 className="text-center mb-12 sm:mb-16"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.8 }}
               >
-                <motion.h2 
+                <motion.h2
                   className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -483,7 +711,7 @@ export default function PartnersPage() {
           </section>
 
           {/* Partnership Application Form */}
-          <section className="py-16 sm:py-24 lg:py-32 px-4 relative overflow-hidden" style={{ background: '#050a0f' }}>
+          <section id="apply" className="py-16 sm:py-24 lg:py-32 px-4 relative overflow-hidden" style={{ background: '#050a0f' }}>
             <div className="max-w-4xl mx-auto relative z-10">
               <motion.div 
                 className="text-center mb-12 sm:mb-16"
