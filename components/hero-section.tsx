@@ -38,8 +38,8 @@ export function HeroSection() {
         }}
       />
 
-      {/* Phone mockups - positioned absolutely on desktop with responsive positioning - moved slightly left */}
-      <div className="relative md:absolute scale-[0.45] sm:scale-[0.55] md:scale-125 md:right-80 md:top-1/2 md:-translate-y-1/2 z-20 top-0 -mt-4 md:mt-0">
+      {/* Phone mockups - positioned absolutely on desktop with responsive positioning */}
+      <div className="relative md:absolute w-full md:w-[500px] lg:w-[600px] xl:w-[650px] md:right-[5%] lg:right-[8%] xl:right-[10%] md:top-1/2 md:-translate-y-1/2 z-20 max-w-[90%] mx-auto md:mx-0">
         <HeroMockups />
       </div>
 

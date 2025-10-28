@@ -164,12 +164,12 @@ export function HeroMockups() {
       />
 
       {/* Container for three mockups with consistent sizing across all desktop screens */}
-      <div className="hero-mockups-container relative flex flex-row md:flex-row items-center justify-center gap-2 md:gap-0 w-full mx-auto px-8 md:px-4 py-8 md:py-12 scale-[1.08] md:scale-100 overflow-visible flex-nowrap" style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate' }}>
+      <div className="hero-mockups-container relative flex flex-row md:flex-row items-center justify-center gap-2 md:gap-0 w-full mx-auto px-4 sm:px-6 md:px-4 py-6 sm:py-8 md:py-12 overflow-visible flex-nowrap" style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate' }}>
         
         {/* Left Phone - Game Discovery */}
         <MockupFrame
           delay={0}
-          className="w-[30%] flex-shrink-0 md:w-[min(280px,20vw)] md:-mr-12 lg:-mr-16 xl:-mr-20 md:-rotate-12 md:-translate-y-3"
+          className="w-[28%] sm:w-[26%] md:w-[220px] lg:w-[240px] xl:w-[260px] flex-shrink-0 md:-mr-8 lg:-mr-12 xl:-mr-14 md:-rotate-12 md:-translate-y-3"
           zIndex={10}
           animateY={[-6, 0, -6]}
           glowColor="from-blue-500/30 via-purple-500/30 to-pink-500/30"
@@ -180,7 +180,7 @@ export function HeroMockups() {
         {/* Center Phone - Interactive Multi-Screen (larger, centered) */}
         <MockupFrame
           delay={0.1}
-          className="w-[30%] flex-shrink-0 md:w-[min(360px,25vw)]"
+          className="w-[32%] sm:w-[30%] md:w-[280px] lg:w-[300px] xl:w-[320px] flex-shrink-0"
           zIndex={20}
           animateY={[-8, 0, -8]}
           animateScale={[1.15, 1.18, 1.15]}
@@ -192,7 +192,7 @@ export function HeroMockups() {
         {/* Right Phone - Leaderboard */}
         <MockupFrame
           delay={0.3}
-          className="w-[30%] flex-shrink-0 md:w-[min(280px,20vw)] md:-ml-12 lg:-ml-16 xl:-ml-20 md:rotate-12 md:translate-y-4"
+          className="w-[28%] sm:w-[26%] md:w-[220px] lg:w-[240px] xl:w-[260px] flex-shrink-0 md:-ml-8 lg:-ml-12 xl:-ml-14 md:rotate-12 md:translate-y-4"
           zIndex={10}
           animateY={[4, 0, 4]}
           glowColor="from-yellow-500/30 via-orange-500/30 to-red-500/30"
@@ -267,10 +267,10 @@ function MockupFrame({
       <motion.div
         // Aspect ratio container - maintains 9:16 phone proportions with consistent sizing
         className="relative w-full"
-        style={{ 
+        style={{
           aspectRatio: '9 / 16',
           maxWidth: '100%',
-          minWidth: '240px',
+          minWidth: '0',
           width: '100%',
           transformStyle: 'preserve-3d',
           backfaceVisibility: 'hidden',
