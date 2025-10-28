@@ -47,23 +47,42 @@ export function HeroSection() {
         <div className="w-full max-w-2xl flex flex-col items-center md:items-start justify-start gap-0 md:gap-2">
           
           <div className="space-y-0 md:space-y-2 flex flex-col items-center md:items-start text-center md:text-left order-2 lg:order-1 max-w-full flex-shrink-0">
-            <motion.h1 
+            <motion.h1
               className="font-bold leading-none text-balance text-5xl md:text-[6rem]"
               style={{ willChange: 'opacity, transform' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
             >
-              <br />
               <motion.span
-                className="block text-3xl md:text-[4rem] md:mt-4"
-                style={{ 
+                className="block text-5xl md:text-[4rem] md:mb-4"
+                style={{
                   color: 'white',
                   willChange: 'transform',
                   backfaceVisibility: 'hidden',
                   transform: 'translate3d(0,0,0)'
                 }}
-                animate={{ 
+                animate={{
+                  x: [0, -2, -3, -2, 0, 2, 3, 2, 0],
+                  y: [0, 2, 0, -2, -3, -2, 0, 2, 0]
+                }}
+                transition={{
+                  duration: 20,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              >
+                PLAY SPORTS
+              </motion.span>
+              <motion.span
+                className="block text-3xl md:text-[4rem] md:mt-4"
+                style={{
+                  color: 'white',
+                  willChange: 'transform',
+                  backfaceVisibility: 'hidden',
+                  transform: 'translate3d(0,0,0)'
+                }}
+                animate={{
                   x: [0, -3, -4, -3, 0, 3, 4, 3, 0],
                   y: [0, 3, 0, -3, -4, -3, 0, 3, 0]
                 }}
