@@ -44,12 +44,12 @@ export function CreateMatchOverlay({
     startTime: '',
     endTime: '',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-    maxPlayers: '',
+    maxPlayers: '2', // Default for tennis singles
     entryFee: '',
     prizePool: '',
     registrationDeadline: '',
     skillLevel: 'intermediate',
-    format: 'elimination',
+    format: 'singles',
     rules: '',
     requirements: [] as string[],
   })
@@ -272,21 +272,30 @@ export function CreateMatchOverlay({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Validate skill level - ensure it's one of the allowed values
     const validSkillLevels = ['beginner', 'intermediate', 'advanced', 'open']
+
+    // Ensure maxPlayers has a valid value
+    let validMaxPlayers = formData.maxPlayers
+    if (!validMaxPlayers || validMaxPlayers === '' || parseInt(validMaxPlayers) < 1) {
+      const config = getMatchConfig(formData.sport, formData.matchType)
+      validMaxPlayers = config.maxPlayers
+    }
+
     const sanitizedFormData = {
       ...formData,
-      skillLevel: validSkillLevels.includes(formData.skillLevel) 
-        ? formData.skillLevel 
+      maxPlayers: validMaxPlayers,
+      skillLevel: validSkillLevels.includes(formData.skillLevel)
+        ? formData.skillLevel
         : 'open' // Default to 'open' if invalid
     }
-    
+
     // Include match ID if editing and selected image file
-    const submitData = editingMatch 
+    const submitData = editingMatch
       ? { ...sanitizedFormData, matchId: editingMatch.id, imageFile: selectedImage }
       : { ...sanitizedFormData, imageFile: selectedImage }
-    
+
     onSubmit(submitData)
   }
 
@@ -345,6 +354,7 @@ export function CreateMatchOverlay({
         setImagePreview(null)
       } else {
         // Reset form for new match creation
+        const defaultConfig = getMatchConfig('tennis', 'singles')
         setFormData({
           title: '',
           description: '',
@@ -357,12 +367,12 @@ export function CreateMatchOverlay({
           startTime: '',
           endTime: '',
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-          maxPlayers: '',
+          maxPlayers: defaultConfig.maxPlayers,
           entryFee: '',
           prizePool: '',
           registrationDeadline: '',
           skillLevel: 'intermediate',
-          format: 'singles',
+          format: defaultConfig.format,
           rules: '',
           requirements: [],
         })
