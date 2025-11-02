@@ -169,39 +169,11 @@ export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editin
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    const submitData = editingCourt 
+    const submitData = editingCourt
       ? { ...formData, courtId: editingCourt.id }
       : formData
     onSubmit(submitData)
-    onClose()
-    // Reset form
-    setFormData({
-      name: '',
-      venueId: '',
-      sport: 'tennis',
-      surface: 'hard',
-      indoor: false,
-      lighting: false,
-      netProvided: true,
-      equipmentRental: false,
-      description: '',
-      hourlyRate: '',
-      peakHourRate: '',
-      advanceBookingDays: '30',
-      maxBookingDuration: '180',
-      length: '',
-      width: '',
-      height: '',
-      availability: {
-        monday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        tuesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        wednesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        thursday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        friday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        saturday: { available: true, openTime: '08:00', closeTime: '20:00' },
-        sunday: { available: true, openTime: '08:00', closeTime: '20:00' },
-      }
-    })
+    // Don't close or reset here - let the parent handle it after the async operation completes
   }
 
   const daysOfWeek = [
