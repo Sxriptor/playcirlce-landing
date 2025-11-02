@@ -381,7 +381,6 @@ export function CreateEventOverlay({
 
   const requirementOptions = [
     'Valid ID Required',
-    'Waiver Must Be Signed',
     'Equipment Provided',
     'Bring Own Equipment',
     'Medical Clearance Required',

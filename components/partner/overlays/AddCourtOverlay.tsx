@@ -17,12 +17,13 @@ import { Textarea } from '@/components/ui/textarea'
 interface AddCourtOverlayProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (courtData: any) => void
+  onSubmit: (courtData: any) => Promise<void>
   venues?: Array<{ id: string; name: string }>
   editingCourt?: any
 }
 
 export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editingCourt }: AddCourtOverlayProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     venueId: '',
@@ -53,72 +54,10 @@ export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editin
 
   // Populate form when editing or reset when creating new court
   useEffect(() => {
-    if (editingCourt) {
-      // Convert availability from database format to form format
-      const availability: any = {
-        monday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        tuesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        wednesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        thursday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        friday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        saturday: { available: true, openTime: '08:00', closeTime: '20:00' },
-        sunday: { available: true, openTime: '08:00', closeTime: '20:00' },
-      }
-
-      // If court has available_hours, convert them to form format
-      if (editingCourt.available_hours) {
-        Object.keys(availability).forEach(day => {
-          if (editingCourt.available_hours[day] && editingCourt.available_hours[day].length > 0) {
-            availability[day] = {
-              available: true,
-              openTime: editingCourt.available_hours[day][0].start,
-              closeTime: editingCourt.available_hours[day][0].end,
-            }
-          } else {
-            availability[day] = { available: false, openTime: '06:00', closeTime: '22:00' }
-          }
-        })
-      }
-
-      setFormData({
-        name: editingCourt.name || '',
-        venueId: editingCourt.venue_id || '',
-        sport: editingCourt.sport_type || 'tennis',
-        surface: editingCourt.surface_type || 'hard',
-        indoor: editingCourt.indoor || false,
-        lighting: editingCourt.lighting || false,
-        netProvided: editingCourt.net_provided || true,
-        equipmentRental: editingCourt.equipment_rental || false,
-        description: editingCourt.description || '',
-        hourlyRate: editingCourt.hourly_rate?.toString() || '',
-        peakHourRate: editingCourt.peak_rate?.toString() || '',
-        advanceBookingDays: editingCourt.advance_booking_days?.toString() || '30',
-        maxBookingDuration: editingCourt.max_booking_duration?.toString() || '180',
-        length: editingCourt.length_meters?.toString() || '',
-        width: editingCourt.width_meters?.toString() || '',
-        height: editingCourt.height_meters?.toString() || '',
-        availability: availability,
-      })
-    } else {
-      // Reset form for new court creation
-      setFormData({
-        name: '',
-        venueId: '',
-        sport: 'tennis',
-        surface: 'hard',
-        indoor: false,
-        lighting: false,
-        netProvided: true,
-        equipmentRental: false,
-        description: '',
-        hourlyRate: '',
-        peakHourRate: '',
-        advanceBookingDays: '30',
-        maxBookingDuration: '180',
-        length: '',
-        width: '',
-        height: '',
-        availability: {
+    if (isOpen) {
+      if (editingCourt) {
+        // Convert availability from database format to form format
+        const availability: any = {
           monday: { available: true, openTime: '06:00', closeTime: '22:00' },
           tuesday: { available: true, openTime: '06:00', closeTime: '22:00' },
           wednesday: { available: true, openTime: '06:00', closeTime: '22:00' },
@@ -126,10 +65,74 @@ export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editin
           friday: { available: true, openTime: '06:00', closeTime: '22:00' },
           saturday: { available: true, openTime: '08:00', closeTime: '20:00' },
           sunday: { available: true, openTime: '08:00', closeTime: '20:00' },
-        },
-      })
+        }
+
+        // If court has available_hours, convert them to form format
+        if (editingCourt.available_hours) {
+          Object.keys(availability).forEach(day => {
+            if (editingCourt.available_hours[day] && editingCourt.available_hours[day].length > 0) {
+              availability[day] = {
+                available: true,
+                openTime: editingCourt.available_hours[day][0].start,
+                closeTime: editingCourt.available_hours[day][0].end,
+              }
+            } else {
+              availability[day] = { available: false, openTime: '06:00', closeTime: '22:00' }
+            }
+          })
+        }
+
+        setFormData({
+          name: editingCourt.name || '',
+          venueId: editingCourt.venue_id || '',
+          sport: editingCourt.sport_type || 'tennis',
+          surface: editingCourt.surface_type || 'hard',
+          indoor: editingCourt.indoor || false,
+          lighting: editingCourt.lighting || false,
+          netProvided: editingCourt.net_provided || true,
+          equipmentRental: editingCourt.equipment_rental || false,
+          description: editingCourt.description || '',
+          hourlyRate: editingCourt.hourly_rate?.toString() || '',
+          peakHourRate: editingCourt.peak_rate?.toString() || '',
+          advanceBookingDays: editingCourt.advance_booking_days?.toString() || '30',
+          maxBookingDuration: editingCourt.max_booking_duration?.toString() || '180',
+          length: editingCourt.length_meters?.toString() || '',
+          width: editingCourt.width_meters?.toString() || '',
+          height: editingCourt.height_meters?.toString() || '',
+          availability: availability,
+        })
+      } else {
+        // Reset form for new court creation
+        setFormData({
+          name: '',
+          venueId: '',
+          sport: 'tennis',
+          surface: 'hard',
+          indoor: false,
+          lighting: false,
+          netProvided: true,
+          equipmentRental: false,
+          description: '',
+          hourlyRate: '',
+          peakHourRate: '',
+          advanceBookingDays: '30',
+          maxBookingDuration: '180',
+          length: '',
+          width: '',
+          height: '',
+          availability: {
+            monday: { available: true, openTime: '06:00', closeTime: '22:00' },
+            tuesday: { available: true, openTime: '06:00', closeTime: '22:00' },
+            wednesday: { available: true, openTime: '06:00', closeTime: '22:00' },
+            thursday: { available: true, openTime: '06:00', closeTime: '22:00' },
+            friday: { available: true, openTime: '06:00', closeTime: '22:00' },
+            saturday: { available: true, openTime: '08:00', closeTime: '20:00' },
+            sunday: { available: true, openTime: '08:00', closeTime: '20:00' },
+          },
+        })
+      }
     }
-  }, [editingCourt])
+  }, [editingCourt, isOpen])
 
   const sportOptions = [
     { value: 'tennis', label: 'Tennis' },
@@ -167,41 +170,19 @@ export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editin
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const submitData = editingCourt 
-      ? { ...formData, courtId: editingCourt.id }
-      : formData
-    onSubmit(submitData)
-    onClose()
-    // Reset form
-    setFormData({
-      name: '',
-      venueId: '',
-      sport: 'tennis',
-      surface: 'hard',
-      indoor: false,
-      lighting: false,
-      netProvided: true,
-      equipmentRental: false,
-      description: '',
-      hourlyRate: '',
-      peakHourRate: '',
-      advanceBookingDays: '30',
-      maxBookingDuration: '180',
-      length: '',
-      width: '',
-      height: '',
-      availability: {
-        monday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        tuesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        wednesday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        thursday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        friday: { available: true, openTime: '06:00', closeTime: '22:00' },
-        saturday: { available: true, openTime: '08:00', closeTime: '20:00' },
-        sunday: { available: true, openTime: '08:00', closeTime: '20:00' },
-      }
-    })
+    setIsSubmitting(true)
+    try {
+      const submitData = editingCourt
+        ? { ...formData, courtId: editingCourt.id }
+        : formData
+      await onSubmit(submitData)
+    } catch (error) {
+      console.error('Error submitting court:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const daysOfWeek = [
@@ -585,19 +566,21 @@ export function AddCourtOverlay({ isOpen, onClose, onSubmit, venues = [], editin
               type="button"
               variant="outline"
               onClick={onClose}
+              disabled={isSubmitting}
               className="bg-white/5 border-white/20 text-gray-300 hover:bg-white/10 hover:text-white"
             >
               Cancel
             </Button>
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="text-white"
               style={{
                 background: '#456882',
                 boxShadow: '0 4px 12px rgba(69, 104, 130, 0.3)'
               }}
             >
-              {editingCourt ? 'Save Changes' : 'Create Court'}
+              {isSubmitting ? (editingCourt ? 'Saving...' : 'Creating...') : (editingCourt ? 'Save Changes' : 'Create Court')}
             </Button>
           </div>
         </form>

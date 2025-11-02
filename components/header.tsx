@@ -5,9 +5,18 @@ import { useEffect, useState } from "react"
 import { Menu, X } from "lucide-react"
 import { motion } from "framer-motion"
 import { usePathname } from "next/navigation"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
   const pathname = usePathname()
 
   // Function to check if a link is active
@@ -247,7 +256,7 @@ export function Header() {
             </motion.nav>
           </div>
 
-          {/* Desktop: Download App Button */}
+          {/* Desktop: App Button */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -261,6 +270,8 @@ export function Header() {
               onClick={() => {
                 if (pathname === '/partners') {
                   window.location.href = '/partner/entry'
+                } else {
+                  setDownloadDialogOpen(true)
                 }
               }}
               className="hidden md:flex bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-4 lg:px-6 py-2 lg:py-2.5 text-sm lg:text-base transition-all duration-200 touch-target"
@@ -542,6 +553,40 @@ export function Header() {
           </div>
         </div>
       )}
+
+      {/* Download App Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Download PlayCircle App</DialogTitle>
+            <DialogDescription>
+              You can download the app on your phone to get the full experience.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-2">App Store Link:</p>
+            <p className="text-sm font-mono bg-muted p-2 rounded break-all">
+              https://apps.apple.com/us/app/playcircle/id6753913576
+            </p>
+          </div>
+          <DialogFooter className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setDownloadDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setDownloadDialogOpen(false)
+                window.open('https://apps.apple.com/us/app/playcircle/id6753913576', '_blank')
+              }}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

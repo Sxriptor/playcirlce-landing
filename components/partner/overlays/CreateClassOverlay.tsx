@@ -178,7 +178,6 @@ export function CreateClassOverlay({
   const requirementOptions = [
     'No Experience Required',
     'Basic Skills Required',
-    'Waiver Must Be Signed',
     'Parent/Guardian Consent (Minors)',
     'Medical Clearance Required',
     'Proper Athletic Attire Required',
