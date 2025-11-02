@@ -191,7 +191,6 @@ export function CreateMatchOverlay({
 
   const requirementOptions = [
     'Valid ID Required',
-    'Waiver Must Be Signed',
     'Equipment Provided',
     'Bring Own Equipment',
     'Skill Level Verification',
